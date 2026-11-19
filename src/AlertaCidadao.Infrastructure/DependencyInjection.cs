@@ -14,6 +14,8 @@ public static class DependencyInjection
         services.AddScoped<ILeituraEnchenteRepository, LeituraEnchenteRepository>();
         services.AddScoped<IAlertaRepository, AlertaRepository>();
         services.AddScoped<IRequisicaoIdempotenciaRepository, RequisicaoIdempotenciaRepository>();
+        services.AddScoped<IOcorrenciaRepository, OcorrenciaRepository>();
+        services.AddScoped<ISolicitacaoGestorRepository, SolicitacaoGestorRepository>();
         return services;
     }
 }

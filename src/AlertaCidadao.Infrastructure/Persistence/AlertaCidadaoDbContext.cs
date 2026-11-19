@@ -24,6 +24,10 @@ public class AlertaCidadaoDbContext : DbContext
     public DbSet<RequisicaoIdempotencia> RequisicoesIdempotencia =>
         Set<RequisicaoIdempotencia>();
 
+    public DbSet<Ocorrencia> Ocorrencias => Set<Ocorrencia>();
+
+    public DbSet<SolicitacaoGestor> SolicitacoesGestor => Set<SolicitacaoGestor>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -33,6 +37,8 @@ public class AlertaCidadaoDbContext : DbContext
         ConfigurarLeituraEnchente(modelBuilder);
         ConfigurarAlerta(modelBuilder);
         ConfigurarIdempotencia(modelBuilder);
+        ConfigurarOcorrencia(modelBuilder);
+        ConfigurarSolicitacaoGestor(modelBuilder);
     }
 
     private static void ConfigurarUsuario(ModelBuilder modelBuilder)
@@ -295,6 +301,85 @@ public class AlertaCidadaoDbContext : DbContext
         });
     }
 
+    private static void ConfigurarOcorrencia(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Ocorrencia>(entity =>
+        {
+            entity.ToTable("OCORRENCIA");
+
+            entity.HasKey(x => x.IdOcorrencia)
+                .HasName("PK_OCORRENCIA");
+
+            entity.Property(x => x.IdOcorrencia)
+                .HasColumnName("ID_OCORRENCIA")
+                .HasColumnType("NUMBER(20,0)")
+                .ValueGeneratedOnAdd();
+
+            entity.Property(x => x.IdUsuario)
+                .HasColumnName("ID_USUARIO")
+                .HasColumnType("NUMBER(20,0)");
+
+            entity.Property(x => x.IdPonto)
+                .HasColumnName("ID_PONTO")
+                .HasColumnType("NUMBER(20,0)");
+
+            entity.Property(x => x.Tipo)
+                .HasColumnName("TIPO")
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.Property(x => x.Titulo)
+                .HasColumnName("TITULO")
+                .HasMaxLength(120)
+                .IsRequired();
+
+            entity.Property(x => x.Descricao)
+                .HasColumnName("DESCRICAO")
+                .HasMaxLength(1000)
+                .IsRequired();
+
+            entity.Property(x => x.Logradouro).HasColumnName("LOGRADOURO").HasMaxLength(180);
+            entity.Property(x => x.Bairro).HasColumnName("BAIRRO").HasMaxLength(100);
+            entity.Property(x => x.Cidade).HasColumnName("CIDADE").HasMaxLength(100);
+            entity.Property(x => x.Uf).HasColumnName("UF").HasColumnType("CHAR(2)");
+            entity.Property(x => x.Latitude).HasColumnName("LATITUDE").HasColumnType("NUMBER(9,6)");
+            entity.Property(x => x.Longitude).HasColumnName("LONGITUDE").HasColumnType("NUMBER(9,6)");
+
+            entity.Property(x => x.Status)
+                .HasColumnName("STATUS")
+                .HasMaxLength(20)
+                .HasDefaultValue("ABERTA")
+                .IsRequired();
+
+            entity.Property(x => x.DataCriacao)
+                .HasColumnName("DATA_CRIACAO")
+                .HasColumnType("TIMESTAMP WITH TIME ZONE")
+                .HasDefaultValueSql("SYSTIMESTAMP");
+
+            entity.Property(x => x.DataAtualizacao)
+                .HasColumnName("DATA_ATUALIZACAO")
+                .HasColumnType("TIMESTAMP WITH TIME ZONE");
+
+            entity.HasIndex(x => new { x.IdUsuario, x.DataCriacao })
+                .HasDatabaseName("IX_OCORRENCIA_USUARIO_DATA");
+
+            entity.HasIndex(x => x.IdPonto)
+                .HasDatabaseName("IX_OCORRENCIA_PONTO");
+
+            entity.HasOne(x => x.Usuario)
+                .WithMany(x => x.Ocorrencias)
+                .HasForeignKey(x => x.IdUsuario)
+                .HasConstraintName("FK_OCORRENCIA_USUARIO")
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.Ponto)
+                .WithMany(x => x.Ocorrencias)
+                .HasForeignKey(x => x.IdPonto)
+                .HasConstraintName("FK_OCORRENCIA_PONTO")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
     private static void ConfigurarIdempotencia(
         ModelBuilder modelBuilder)
     {
@@ -342,6 +427,27 @@ public class AlertaCidadaoDbContext : DbContext
 
             entity.HasIndex(x => x.DataExpiracao)
                 .HasDatabaseName("IX_IDEMPOTENCIA_EXPIRA");
+        });
+    }
+
+    private static void ConfigurarSolicitacaoGestor(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<SolicitacaoGestor>(entity =>
+        {
+            entity.ToTable("SOLICITACAO_GESTOR");
+            entity.HasKey(x => x.IdSolicitacaoGestor).HasName("PK_SOLICITACAO_GESTOR");
+            entity.Property(x => x.IdSolicitacaoGestor).HasColumnName("ID_SOLICITACAO_GESTOR").HasColumnType("NUMBER(20,0)").ValueGeneratedOnAdd();
+            entity.Property(x => x.IdUsuario).HasColumnName("ID_USUARIO").HasColumnType("NUMBER(20,0)").IsRequired();
+            entity.Property(x => x.Motivo).HasColumnName("MOTIVO").HasMaxLength(500).IsRequired();
+            entity.Property(x => x.Status).HasColumnName("STATUS").HasMaxLength(20).HasDefaultValue("PENDENTE").IsRequired();
+            entity.Property(x => x.DataSolicitacao).HasColumnName("DATA_SOLICITACAO").HasColumnType("TIMESTAMP WITH TIME ZONE").HasDefaultValueSql("SYSTIMESTAMP");
+            entity.Property(x => x.DataDecisao).HasColumnName("DATA_DECISAO").HasColumnType("TIMESTAMP WITH TIME ZONE");
+            entity.Property(x => x.IdGestorResponsavel).HasColumnName("ID_GESTOR_RESPONSAVEL").HasColumnType("NUMBER(20,0)");
+            entity.Property(x => x.ObservacaoDecisao).HasColumnName("OBSERVACAO_DECISAO").HasMaxLength(500);
+            entity.HasIndex(x => new { x.IdUsuario, x.Status }).HasDatabaseName("IX_SOL_GESTOR_USUARIO_STATUS");
+            entity.HasIndex(x => new { x.Status, x.DataSolicitacao }).HasDatabaseName("IX_SOL_GESTOR_STATUS_DATA");
+            entity.HasOne<Usuario>().WithMany().HasForeignKey(x => x.IdUsuario).HasConstraintName("FK_SOL_GESTOR_USUARIO").OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Usuario>().WithMany().HasForeignKey(x => x.IdGestorResponsavel).HasConstraintName("FK_SOL_GESTOR_RESPONSAVEL").OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

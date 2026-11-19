@@ -1,4 +1,3 @@
-
 using AlertaCidadao.Application.Interfaces;
 using AlertaCidadao.Domain.Entities;
 using AlertaCidadao.Infrastructure.Persistence;
@@ -21,11 +20,17 @@ public sealed class PontoMonitoramentoRepository
         ListarAtivosAsync(
             CancellationToken cancellationToken = default)
     {
-        return await _context.PontosMonitoramento
+        // A coluna Oracle NUMBER(1) é mapeada diretamente para bool.
+        // Mantemos o filtro em memória para preservar a estratégia de
+        // leitura já utilizada neste repositório.
+        var pontos = await _context.PontosMonitoramento
             .AsNoTracking()
-            .Where(p => p.Ativo)
             .OrderBy(p => p.Nome)
             .ToListAsync(cancellationToken);
+
+        return pontos
+            .Where(p => p.Ativo)
+            .ToList();
     }
 
     public async Task<IReadOnlyList<PontoMonitoramento>> ListarTodosAsync(

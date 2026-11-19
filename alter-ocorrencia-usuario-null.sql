@@ -1,0 +1,4 @@
+-- Não é necessário alterar a coluna OCORRENCIA.ID_USUARIO para NULL.
+-- A exclusão permanente remove primeiro as ocorrências do cidadão e, em seguida,
+-- remove a conta, tudo dentro de uma única transação na API.
+-- Este arquivo é mantido apenas como orientação; não execute ALTER TABLE aqui.
